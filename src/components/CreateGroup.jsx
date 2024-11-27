@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Menu/Navbar';
+import { createGroup } from '../api/groups'; // Importar la función para crear grupo
 
 const CreateGroup = () => {
   const [groupName, setGroupName] = useState('');
@@ -11,7 +12,6 @@ const CreateGroup = () => {
 
   const navigate = useNavigate();
 
-  // Validar formato de email
   const validateEmail = (email) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return regex.test(email);
@@ -46,10 +46,10 @@ const CreateGroup = () => {
     setMemberErrors(updatedErrors);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const hasErrors = members.some((member) => !validateEmail(member));
+    const hasErrors = members.some((member) => member && !validateEmail(member));
 
     if (!groupName) {
       setError('El nombre del grupo es obligatorio.');
@@ -63,18 +63,28 @@ const CreateGroup = () => {
 
     setError('');
 
-    const newGroup = {
-      name: groupName,
-      description: groupDescription,
-      users: members.length,
-      images: [], // Puedes agregar imágenes si lo deseas
-    };
+    try {
+      const userId = JSON.parse(localStorage.getItem('user'))?.id_usuario;
 
-    const groups = JSON.parse(localStorage.getItem('groups')) || [];
-    localStorage.setItem('groups', JSON.stringify([...groups, newGroup]));
+      if (!userId) {
+        setError('No se encontró el ID del usuario. Intente iniciar sesión nuevamente.');
+        return;
+      }
 
-    // Volver al menú
-    navigate('/menu');
+      // Realiza la solicitud al backend
+      await createGroup({
+        nombre: groupName,
+        descripcion: groupDescription,
+        usuarios: members.filter((member) => member), // Filtra miembros vacíos
+        id_creador: userId,
+      });
+
+      alert('Grupo creado exitosamente.');
+      navigate('/menu');
+    } catch (error) {
+      console.error('Error al crear el grupo:', error);
+      setError('Hubo un error al crear el grupo. Inténtelo de nuevo.');
+    }
   };
 
   return (

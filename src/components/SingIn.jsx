@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom'; // Importa Link aquí
 import { loginUser } from '../api/users';
 
 const SignIn = () => {
@@ -9,16 +9,19 @@ const SignIn = () => {
   const navigate = useNavigate();
 
   const handleSignIn = async (e) => {
-    e.preventDefault();
-  
-    // Log para verificar los datos
-    console.log('Datos enviados:', { correo: email, contrasena: password });
+    e.preventDefault(); // Previene la recarga de la página
+    console.log('Formulario enviado con:', { correo: email, contrasena: password });
   
     try {
       const response = await loginUser({ correo: email, contrasena: password });
-      if (response && response.usuario) {
-        console.log('Inicio de sesión exitoso:', response);
+      console.log('Respuesta del servidor:', response);
+  
+      if (response && response.token) {
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('user', JSON.stringify(response.usuario));
         navigate('/menu');
+      } else {
+        setError('No se pudo iniciar sesión. Verifique sus credenciales.');
       }
     } catch (err) {
       console.error('Error al iniciar sesión:', err);

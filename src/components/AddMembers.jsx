@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Para redirigir al menú
+import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from './Menu/Navbar';
+import { addMembersToGroup } from '../api/groups'; // Importar la función para hacer la llamada al backend
 
 const AddMembers = () => {
   const [members, setMembers] = useState(['']);
-  const [memberErrors, setMemberErrors] = useState([]); // Para errores de validación de email
+  const [memberErrors, setMemberErrors] = useState([]);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(''); // Para mostrar mensajes de éxito
 
-  const navigate = useNavigate(); // Hook para navegación
+  const navigate = useNavigate();
+  const location = useLocation(); // Obtener el id_grupo del estado de navegación
 
   // Validar formato de email
   const validateEmail = (email) => {
@@ -34,7 +37,6 @@ const AddMembers = () => {
     const updatedMembers = [...members];
     const updatedErrors = [...memberErrors];
 
-    // Validar email en el campo correspondiente
     if (!validateEmail(value)) {
       updatedErrors[index] = 'Formato de email inválido';
     } else {
@@ -46,38 +48,43 @@ const AddMembers = () => {
     setMemberErrors(updatedErrors);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validar que todos los correos sean válidos
-    const hasErrors = members.some((member) => !validateEmail(member));
+    const sanitizedMembers = members.map((email) => email.trim().toLowerCase());
 
-    if (hasErrors) {
-      setError('Todos los miembros deben tener un email válido.');
-      return;
+    if (sanitizedMembers.some((email) => !validateEmail(email))) {
+        setError('Todos los miembros deben tener un email válido.');
+        return;
     }
 
-    setError('');
-    // Redirigir con los miembros agregados a la página de miembros
-    navigate('/team-members', { state: { newMembers: members.map((email) => ({ name: email, email })) } });
-  };
+    try {
+        const id_grupo = location.state?.id_grupo;
+        console.log('Correos enviados al backend:', sanitizedMembers);
+        const response = await addMembersToGroup(id_grupo, sanitizedMembers);
+        console.log('Respuesta del backend:', response);
+        navigate(`/miembros/${id_grupo}`);
+    } catch (error) {
+        console.error('Error al agregar miembros:', error);
+        setError('Ocurrió un error al agregar los miembros. Inténtalo de nuevo.');
+    }
+};
 
   const handleGoBack = () => {
-    navigate('/team-members'); // Navega de vuelta a la página de miembros del equipo
+    const id_grupo = location.state?.id_grupo; // Obtener id_grupo desde el estado
+    navigate(`/miembros/${id_grupo}`); // Redirigir a la URL específica del grupo
   };
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
-      {/* Navbar */}
       <Navbar />
 
-      {/* Formulario para agregar miembros */}
       <div className="flex-grow flex items-center justify-center">
-        <div className="w-full max-w-md bg-white shadow-md rounded-lg py-12 px-6"> {/* Se ha reducido el ancho y aumentado el largo */}
+        <div className="w-full max-w-md bg-white shadow-md rounded-lg py-12 px-6">
           <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">Agregar Miembros</h2>
           {error && <p className="text-red-500 mb-4 text-sm">{error}</p>}
+          {success && <p className="text-green-500 mb-4 text-sm">{success}</p>}
           <form onSubmit={handleSubmit}>
-            {/* Lista de miembros */}
             <div className="mb-4">
               <label className="block text-gray-700 text-sm font-medium mb-2">Miembros (Emails)</label>
               {members.map((member, index) => (
@@ -110,7 +117,6 @@ const AddMembers = () => {
               </button>
             </div>
 
-            {/* Botón de agregar miembros */}
             <button
               type="submit"
               className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition duration-150 text-sm"
@@ -119,7 +125,6 @@ const AddMembers = () => {
             </button>
           </form>
 
-          {/* Botón para volver a la página de miembros del equipo */}
           <button
             onClick={handleGoBack}
             className="w-full mt-4 bg-gray-500 text-white py-2 rounded-md hover:bg-gray-600 transition duration-150 text-sm"

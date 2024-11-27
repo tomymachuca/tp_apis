@@ -13,9 +13,14 @@ export const registerUser = async (userData) => {
 
 // Servicio para iniciar sesión
 export const loginUser = async (credentials) => {
-  const response = await apiClient.post('/users/login', credentials);
-  return response.data;
+  try {
+    const response = await apiClient.post('/users/login', credentials);
+    return response.data; // Asegúrate de que `response.data` contenga el token y el usuario.
+  } catch (error) {
+    throw new Error(error.response?.data?.error || 'Error en la solicitud');
+  }
 };
+
 
 // Servicio para obtener todos los usuarios
 export const getUsers = async () => {

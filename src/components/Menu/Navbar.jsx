@@ -137,7 +137,7 @@ const Navbar = () => {
                   <button
                     onClick={() => {
                       localStorage.removeItem("user");
-                      navigate("/signin");
+                      navigate("/");
                     }}
                     className={`block w-full px-4 py-2 text-sm text-gray-700 font-medium hover:bg-gray-100 transition-all ${
                       active ? "bg-gray-100" : ""

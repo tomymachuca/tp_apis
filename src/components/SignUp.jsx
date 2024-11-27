@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { registerUser } from "../api/users"; // Asegúrate de importar el servicio de registro
+import { registerUser } from "../api/users";
 
 const SignUpForm = () => {
   const [username, setUsername] = useState("");
@@ -8,9 +8,10 @@ const SignUpForm = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState(""); // Para manejar el éxito
+  const [successMessage, setSuccessMessage] = useState("");
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
+
   const navigate = useNavigate();
 
   const validateEmail = (email) => {
@@ -20,46 +21,65 @@ const SignUpForm = () => {
 
   const handleSignUp = async (e) => {
     e.preventDefault();
-
+  
+    setErrorMessage("");
+    setSuccessMessage("");
+  
     if (!validateEmail(email)) {
-      setErrorMessage("Formato de email inválido");
+      setErrorMessage("Formato de email inválido.");
       return;
     }
-
+  
     if (password.length < 8) {
-      setErrorMessage("La contraseña debe tener al menos 8 caracteres");
+      setErrorMessage("La contraseña debe tener al menos 8 caracteres.");
       return;
     }
-
+  
     if (password !== confirmPassword) {
-      setErrorMessage("Las contraseñas no coinciden");
+      setErrorMessage("Las contraseñas no coinciden.");
       return;
     }
-
+  
     try {
       const formData = new FormData();
       formData.append("nombre", username);
       formData.append("correo", email);
       formData.append("contrasena", password);
-      if (profilePhoto) formData.append("foto_perfil", profilePhoto); // Cambiado a 'foto_perfil'
-
-      const response = await registerUser(formData); // Llama a tu servicio de registro
-      console.log("Usuario registrado:", response);
-      setSuccessMessage("Usuario registrado exitosamente.");
-
-      setTimeout(() => {
-        navigate("/menu");
-      }, 2000);
+      if (profilePhoto) formData.append("foto_perfil", profilePhoto);
+  
+      // Call the registerUser function to send data to the backend
+      const response = await registerUser(formData);
+  
+      console.log("Backend Response:", response);
+  
+      // Validate the backend response structure
+      if (response && response.token && response.usuario) {
+        localStorage.setItem("token", response.token);
+        localStorage.setItem("user", JSON.stringify(response.usuario));
+  
+        console.log("Token and user saved to localStorage:", {
+          token: response.token,
+          user: response.usuario,
+        });
+  
+        setSuccessMessage("Usuario registrado exitosamente.");
+        setTimeout(() => navigate("/menu"), 2000);
+      } else {
+        console.error("Unexpected backend response structure:", response);
+        throw new Error("La respuesta del servidor no contiene los datos esperados.");
+      }
     } catch (error) {
       console.error("Error al registrar usuario:", error);
-      setErrorMessage("Error al registrar usuario.");
+      setErrorMessage(
+        error.response?.data?.error || "Error al registrar usuario. Intenta nuevamente."
+      );
     }
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    setProfilePhoto(file); // Guardar el archivo seleccionado
-    setPhotoPreview(URL.createObjectURL(file)); // Generar una vista previa
+    setProfilePhoto(file);
+    setPhotoPreview(URL.createObjectURL(file));
   };
 
   const handleGoToLanding = () => {
@@ -77,7 +97,6 @@ const SignUpForm = () => {
         </div>
 
         <form onSubmit={handleSignUp}>
-          {/* Nombre de usuario */}
           <div className="relative flex items-center mb-6">
             <span className="absolute">
               <svg
@@ -105,7 +124,6 @@ const SignUpForm = () => {
             />
           </div>
 
-          {/* Foto de perfil */}
           <label
             htmlFor="profile-photo"
             className="flex items-center px-3 py-3 mx-auto mb-3 text-center bg-white border-2 border-dashed rounded-lg cursor-pointer"
@@ -128,7 +146,7 @@ const SignUpForm = () => {
             <input
               id="profile-photo"
               type="file"
-              name="foto_perfil" // Cambiado a 'foto_perfil'
+              name="foto_perfil"
               className="hidden"
               accept="image/*"
               onChange={handleFileChange}
@@ -142,13 +160,9 @@ const SignUpForm = () => {
                 alt="Vista previa de la foto de perfil"
                 className="w-16 h-16 rounded-full border"
               />
-              <span className="ml-4 text-sm text-green-500">
-                ¡Foto cargada con éxito!
-              </span>
             </div>
           )}
 
-          {/* Email */}
           <div className="relative flex items-center mb-6">
             <span className="absolute">
               <svg
@@ -176,7 +190,6 @@ const SignUpForm = () => {
             />
           </div>
 
-          {/* Contraseña */}
           <div className="relative flex items-center mb-6">
             <span className="absolute">
               <svg
@@ -204,7 +217,6 @@ const SignUpForm = () => {
             />
           </div>
 
-          {/* Confirmar contraseña */}
           <div className="relative flex items-center mb-6">
             <span className="absolute">
               <svg
