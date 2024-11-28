@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Balance from './Balance';
-import Historial from './Historial';
 import Navbar from './Menu/Navbar';
 import { getMembersByGroupId } from '../api/groups'; // API call to fetch members by group ID
 
@@ -54,6 +53,11 @@ const TeamMembersComponent = () => {
         navigate('/saldo', { state: { id_grupo } }); // Pass id_grupo to view balance
     };
 
+    // Navigate to the Historial route
+    const handleHistorialNavigation = () => {
+        navigate(`/historial/${id_grupo}`); // Pass id_grupo to the historial route
+    };
+
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col">
             <Navbar />
@@ -69,7 +73,7 @@ const TeamMembersComponent = () => {
                         </button>
                         <button
                             className={`inline-flex items-center h-10 px-4 -mb-px text-sm ${activeTab === 'Historial' ? 'text-blue-600 border-blue-500 shadow-lg' : 'text-gray-700 border-transparent'} bg-transparent border-b-2 sm:text-base`}
-                            onClick={() => setActiveTab('Historial')}
+                            onClick={handleHistorialNavigation} // Redirige a la ruta del historial
                         >
                             Historial
                         </button>
@@ -110,41 +114,28 @@ const TeamMembersComponent = () => {
                                             <th className="p-4 text-left text-gray-700 font-semibold">Acción</th>
                                         </tr>
                                     </thead>
-                                            <tbody>
-        {members.map((member, index) => (
-            <tr key={index} className="border-t">
-            <td className="p-4 text-gray-900">{member.nombre}</td>
-            <td className="p-4 text-gray-600">{member.correo}</td>
-            <td className="p-4 text-gray-600">{member.rol}</td>
-            <td className="p-4 text-gray-600">
-                {member.rol !== 'Creador' && ( // No mostrar el botón si es creador
-                <button
-                    className="text-red-500 hover:text-red-700"
-                    onClick={() => handleDelete(index)}
-                >
-                    Eliminar
-                </button>
-                )}
-            </td>
-            </tr>
-        ))}
-        </tbody>
+                                    <tbody>
+                                        {members.map((member, index) => (
+                                            <tr key={index} className="border-t">
+                                                <td className="p-4 text-gray-900">{member.nombre}</td>
+                                                <td className="p-4 text-gray-600">{member.correo}</td>
+                                                <td className="p-4 text-gray-600">{member.rol}</td>
+                                                <td className="p-4 text-gray-600">
+                                                    {member.rol !== 'Creador' && (
+                                                        <button
+                                                            className="text-red-500 hover:text-red-700"
+                                                            onClick={() => handleDelete(index)}
+                                                        >
+                                                            Eliminar
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
                                 </table>
                             </div>
-
-                            {balanceCalculated && (
-                                <div className="flex justify-center mt-6">
-                                    <button
-                                        onClick={handleViewSaldo}
-                                        className="px-6 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600"
-                                    >
-                                        Ver Saldo
-                                    </button>
-                                </div>
-                            )}
                         </>
-                    ) : activeTab === 'Historial' ? (
-                        <Historial />
                     ) : activeTab === 'balance' ? (
                         <Balance />
                     ) : null}

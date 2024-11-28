@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom'; // Importa Link aquí
+import { useNavigate, Link } from 'react-router-dom';
 import { loginUser } from '../api/users';
 
 const SignIn = () => {
@@ -9,16 +9,21 @@ const SignIn = () => {
   const navigate = useNavigate();
 
   const handleSignIn = async (e) => {
-    e.preventDefault(); // Previene la recarga de la página
+    e.preventDefault();
+
     console.log('Formulario enviado con:', { correo: email, contrasena: password });
-  
+
     try {
       const response = await loginUser({ correo: email, contrasena: password });
       console.log('Respuesta del servidor:', response);
-  
+
       if (response && response.token) {
+        // Guardar datos en el almacenamiento local
         localStorage.setItem('token', response.token);
+        localStorage.setItem('userId', response.usuario.id_usuario);
         localStorage.setItem('user', JSON.stringify(response.usuario));
+
+        // Redirigir al menú
         navigate('/menu');
       } else {
         setError('No se pudo iniciar sesión. Verifique sus credenciales.');
@@ -37,8 +42,11 @@ const SignIn = () => {
         </div>
 
         <form className="mt-6" onSubmit={handleSignIn}>
+          {/* Email Input */}
           <div>
-            <label htmlFor="email" className="block text-sm text-gray-800">Mail</label>
+            <label htmlFor="email" className="block text-sm text-gray-800">
+              Mail
+            </label>
             <input
               type="email"
               id="email"
@@ -48,8 +56,11 @@ const SignIn = () => {
             />
           </div>
 
+          {/* Password Input */}
           <div className="mt-4">
-            <label htmlFor="password" className="block text-sm text-gray-800">Contraseña</label>
+            <label htmlFor="password" className="block text-sm text-gray-800">
+              Contraseña
+            </label>
             <input
               type="password"
               id="password"
@@ -59,8 +70,10 @@ const SignIn = () => {
             />
           </div>
 
+          {/* Error Message */}
           {error && <div className="mt-2 text-red-600 text-sm">{error}</div>}
 
+          {/* Submit Button */}
           <div className="mt-6">
             <button
               type="submit"
@@ -73,7 +86,7 @@ const SignIn = () => {
 
         <p className="mt-8 text-xs font-light text-center text-gray-400">
           ¿Aún no tienes cuenta?{' '}
-          <Link to="/signup" className="font-medium text-blue-600 hover:underline">
+          <Link to="/registrarse" className="font-medium text-blue-600 hover:underline">
             Crea una
           </Link>
         </p>
