@@ -1,6 +1,7 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom"; // Asegúrate de importar useParams
 import Navbar from './Menu/Navbar';
+import { getMembersByGroupId } from '../api/groups'; // Función para obtener miembros del grupo
 
 const TicketGroupForm = () => {
   const [formData, setFormData] = useState({
@@ -11,15 +12,36 @@ const TicketGroupForm = () => {
   });
 
   const [divisionType, setDivisionType] = useState('');
-  const [members, setMembers] = useState([
-    { id: '1', nombre: 'Miembro 1' },
-    { id: '2', nombre: 'Miembro 2' },
-    { id: '3', nombre: 'Miembro 3' },
-  ]); // Miembros simulados del grupo
+  const [members, setMembers] = useState([]);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
   const navigate = useNavigate();
+  const { id_grupo } = useParams(); // Obtén el ID del grupo de la URL
+
+  // Cargar miembros del grupo desde la API
+  useEffect(() => {
+    if (!id_grupo) {
+      setError("ID de grupo no encontrado.");
+      return;
+    }
+
+    const fetchMembers = async () => {
+      try {
+        const response = await getMembersByGroupId(id_grupo);
+        if (response && response.members) {
+          setMembers(response.members);
+        } else {
+          setError("No se encontraron miembros para este grupo.");
+        }
+      } catch (err) {
+        console.error("Error al cargar miembros:", err);
+        setError("Hubo un problema al cargar los miembros. Por favor, inténtalo de nuevo.");
+      }
+    };
+
+    fetchMembers();
+  }, [id_grupo]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -83,7 +105,7 @@ const TicketGroupForm = () => {
     setError('');
     setSuccessMessage('El ticket se cargó correctamente.');
     setTimeout(() => {
-      navigate('/miembros'); // Redirige a team-members
+      navigate(`/miembros/${id_grupo}`); // Redirige a team-members
     }, 2000);
   };
 
@@ -93,6 +115,8 @@ const TicketGroupForm = () => {
       <main className="flex flex-grow items-center justify-center mt-8">
         <div className="bg-white shadow-lg rounded-lg p-8 max-w-lg w-full mx-4">
           <h2 className="text-2xl font-bold text-center text-gray-700 mb-6">Ingrese su Ticket</h2>
+          {error && <p className="text-red-500 text-center">{error}</p>}
+          {successMessage && <p className="text-green-500 text-center">{successMessage}</p>}
           <form onSubmit={handleSubmit}>
             {/* Fecha */}
             <div className="mb-4">
@@ -122,85 +146,80 @@ const TicketGroupForm = () => {
               />
             </div>
 
-            {/* Descripción del gasto */}
+            {/* Descripción */}
             <div className="mb-4">
-              <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 mb-2">Descripción del gasto:</label>
+              <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 mb-2">Descripción:</label>
               <textarea
                 id="descripcion"
                 name="descripcion"
                 value={formData.descripcion}
                 onChange={handleChange}
-                rows="3"
                 required
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="Describa el gasto..."
               ></textarea>
             </div>
 
-            {/* Subir Foto del Ticket */}
-            <div className="mb-6">
-              <label htmlFor="foto" className="block text-sm font-medium text-gray-700 mb-2">Subir foto del ticket:</label>
+            {/* Foto */}
+            <div className="mb-4">
+              <label htmlFor="foto" className="block text-sm font-medium text-gray-700 mb-2">Foto:</label>
               <input
                 type="file"
                 id="foto"
                 name="foto"
-                accept="image/*"
                 onChange={handleFileChange}
-                required
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
+                className="block w-full text-sm text-gray-700 border border-gray-300 rounded-md"
               />
             </div>
 
-            {/* Tipo de división */}
+            {/* Tipo de División */}
             <div className="mb-4">
-              <label htmlFor="division" className="block text-sm font-medium text-gray-700 mb-2">Dividir gasto:</label>
+              <label htmlFor="divisionType" className="block text-sm font-medium text-gray-700 mb-2">Tipo de División:</label>
               <select
-                id="division"
-                name="division"
+                id="divisionType"
+                name="divisionType"
                 value={divisionType}
                 onChange={handleDivisionTypeChange}
                 required
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               >
-                <option value="" disabled>Seleccione una opción</option>
-                <option value="equitativo">Equitativamente</option>
+                <option value="">Seleccione un tipo</option>
+                <option value="equitativo">Equitativo</option>
                 <option value="por-partes">Por partes</option>
               </select>
             </div>
 
-            {/* Miembros y porcentajes */}
-            {members.length > 0 && (
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Miembros:</label>
-                {members.map((member, index) => (
-                  <div key={member.id} className="flex items-center mb-2 space-x-4">
-                    <span className="w-1/2 text-sm">{member.nombre} (ID: {member.id})</span>
+            {/* Miembros */}
+            <div className="mb-4">
+              <h3 className="text-sm font-medium text-gray-700">Miembros:</h3>
+              {members.length === 0 ? (
+                <p className="text-gray-500">No hay miembros cargados.</p>
+              ) : (
+                members.map((member, index) => (
+                  <div key={member.id} className="flex items-center space-x-2">
+                    <span>{member.nombre}</span>
                     {divisionType === 'por-partes' && (
                       <input
                         type="number"
-                        placeholder="Porcentaje"
-                        value={member.porcentaje}
+                        value={member.porcentaje || ''}
                         onChange={(e) => handlePercentageChange(index, e.target.value)}
-                        required
-                        className="w-1/3 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        className="w-16 px-2 py-1 border border-gray-300 rounded-md"
+                        placeholder="Porcentaje"
                       />
                     )}
-                    {divisionType === 'por-partes' && <span>%</span>}
                   </div>
-                ))}
-              </div>
-            )}
+                ))
+              )}
+            </div>
 
-            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-            {successMessage && <p className="text-green-500 text-sm mb-4">{successMessage}</p>}
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
-            >
-              Enviar
-            </button>
+            {/* Botón para enviar */}
+            <div className="flex justify-center mt-4">
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 focus:outline-none"
+              >
+                Enviar Ticket
+              </button>
+            </div>
           </form>
         </div>
       </main>

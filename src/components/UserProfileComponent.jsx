@@ -91,10 +91,14 @@ const UserProfileComponent = () => {
       try {
         // Aquí estamos enviando el token en las cabeceras para la autenticación
         const token = localStorage.getItem('authToken'); // Suponiendo que guardas el token en localStorage
-        const response = await updateProfilePicture(id_usuario, formData, token);  // Asegúrate de pasar el token
-  
+        const response = await updateProfilePicture(id_usuario, formData, token);
+        window.location.reload(); // Asegúrate de pasar el token
+        
         setSuccessMessage('Foto de perfil actualizada exitosamente.');
-        setProfilePicture(`http://localhost:3000${response.foto_perfil}`);
+  
+        // Redirigir a la misma página (perfil) para refrescar
+        navigate(`/tu-perfil/${id_usuario}`); // Esto recargará el componente con los nuevos datos
+  
       } catch (error) {
         console.error('Error al actualizar la foto de perfil:', error);
         setSuccessMessage('Error al actualizar la foto de perfil.');
@@ -103,6 +107,9 @@ const UserProfileComponent = () => {
       setSuccessMessage('Por favor, selecciona una foto.');
     }
   };
+  
+  
+  
 
   const handleGoToMenu = () => {
     navigate('/menu');

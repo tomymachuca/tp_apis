@@ -15,36 +15,32 @@ import apiClient from './axios'; // Configuración del cliente Axios
  */
 export const createTicket = async (ticketData) => {
   try {
-    // Crear un FormData para manejar la carga de archivos
     const formData = new FormData();
     formData.append('id_proyecto', ticketData.id_proyecto);
     formData.append('id_usuario', ticketData.id_usuario);
     formData.append('fecha_compra', ticketData.fecha_compra);
     formData.append('monto_total', ticketData.monto_total);
     formData.append('descripcion', ticketData.descripcion);
-    formData.append('imagen', ticketData.imagen);
+    formData.append('imagen', ticketData.imagen);  // Agregar imagen al FormData
     formData.append('division_type', ticketData.division_type);
 
+    // Asegúrate de que los porcentajes se envíen solo cuando corresponda
     if (ticketData.division_type === 'porcentajes') {
-      // Agregar los porcentajes al FormData en formato JSON
-      formData.append('porcentajes', JSON.stringify(ticketData.porcentajes));
+      formData.append('porcentajes', JSON.stringify(ticketData.porcentajes));  // Enviar porcentajes como un string JSON
     }
 
-    // Realizar la solicitud al backend
     const response = await apiClient.post('/tickets/create', formData, {
       headers: {
-        'Content-Type': 'multipart/form-data', // Encabezado necesario para archivos
+        'Content-Type': 'multipart/form-data',  // Asegúrate de que este encabezado sea correcto
       },
     });
 
-    console.log('Ticket creado con éxito:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error al crear el ticket:', error.response?.data || error.message);
-    throw error; // Propagar el error para manejo en el componente
+    throw error;
   }
 };
-
 /**
  * Obtener tickets por ID de proyecto
  * @param {number} id_proyecto - ID del proyecto para obtener los tickets

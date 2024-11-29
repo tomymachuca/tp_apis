@@ -47,7 +47,7 @@ const Sidebar = () => {
         className={`fixed top-0 left-0 z-40 flex flex-col w-64 h-screen px-4 py-8 overflow-y-auto bg-gray-50 border-r transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out md:translate-x-0`}
       >
         {/* Navegación */}
-        <nav className="flex-1 mt-6">
+        <nav className="flex-1 mt-12"> {/* Ajusté el mt-6 a mt-12 para bajar las opciones */}
           {/* Link a Menu (Ruta: /menu) */}
           <Link
             to="/menu"
@@ -80,9 +80,8 @@ const Sidebar = () => {
               />
               <path d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span className="mx-4 font-medium">Cuenta</span>
+            <span className="mx-4 font-medium">Mi Cuenta</span>
           </Link>
-
           {/* Link a Carga tu Ticket (Ruta: /charge-ticket) */}
           <Link
             to="/cargar-ticket"
@@ -99,8 +98,6 @@ const Sidebar = () => {
             </svg>
             <span className="mx-4 font-medium">Carga tu Ticket</span>
           </Link>
-
-          <hr className="my-6 border-gray-200" />
         </nav>
       </aside>
     </>

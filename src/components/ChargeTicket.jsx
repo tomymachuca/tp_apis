@@ -15,14 +15,15 @@ const TicketForm = () => {
     porcentajes: [],
   });
 
-  const [grupos, setGrupos] = useState([]);
-  const [miembros, setMiembros] = useState([]);
+  const [grupos, setGrupos] = useState([]); // Lista de grupos
+  const [miembros, setMiembros] = useState([]); // Miembros del grupo seleccionado
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
   const navigate = useNavigate();
   const userId = localStorage.getItem('userId'); // Leer userId de localStorage
 
+  // Cargar grupos en los que el usuario está
   useEffect(() => {
     if (!userId) {
       console.error('El userId no está definido.');
@@ -49,12 +50,13 @@ const TicketForm = () => {
   }, [userId]);
 
   const handleGroupChange = async (e) => {
-    const selectedGroupId = e.target.value;
+    const selectedGroupId = e.target.value; // El id_grupo
     setFormData((prevData) => ({
       ...prevData,
-      grupo: selectedGroupId,
+      grupo: selectedGroupId, // Asegúrate de guardar solo el id_grupo
     }));
-
+  
+    // Luego obtén los miembros del grupo seleccionado
     try {
       const response = await getMembersByGroupId(selectedGroupId);
       if (response.members && Array.isArray(response.members)) {
@@ -83,6 +85,18 @@ const TicketForm = () => {
       ...prevData,
       divisionType: type,
     }));
+  
+    if (type === 'equitativo' && miembros.length > 0) {
+      const porcentajeEquitativo = 100 / miembros.length;
+      const updatedPorcentajes = miembros.map((miembro) => ({
+        id_usuario: miembro.id,
+        porcentaje: porcentajeEquitativo.toFixed(2), // Aseguramos que sea un número con dos decimales
+      }));
+      setFormData((prevData) => ({
+        ...prevData,
+        porcentajes: updatedPorcentajes,
+      }));
+    }
   };
 
   const handlePorcentajeChange = (index, value) => {
@@ -104,12 +118,13 @@ const TicketForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (!formData.grupo) {
       setError('Debe seleccionar un grupo válido.');
       return;
     }
-
+  
+    // Validación para porcentajes si la división es por porcentajes
     if (formData.divisionType === 'porcentajes') {
       const totalPorcentaje = formData.porcentajes.reduce((sum, item) => sum + parseFloat(item.porcentaje || 0), 0);
       if (totalPorcentaje !== 100) {
@@ -117,10 +132,10 @@ const TicketForm = () => {
         return;
       }
     }
-
+  
     try {
       const ticketData = {
-        id_proyecto: formData.grupo,
+        id_proyecto: formData.grupo,  // Asegúrate de que el id_grupo se pase como id_proyecto
         id_usuario: userId,
         fecha_compra: formData.fecha,
         monto_total: formData.monto,
@@ -129,20 +144,19 @@ const TicketForm = () => {
         division_type: formData.divisionType,
         porcentajes: formData.divisionType === 'porcentajes' ? formData.porcentajes : [],
       };
-
+  
       await createTicket(ticketData);
-
-      setError('');
       setSuccessMessage('El ticket se cargó correctamente.');
+      setError('');
       setTimeout(() => {
-        navigate('/menu');
+        navigate('/menu');  // Redirigir al menú después de la creación del ticket
       }, 2000);
     } catch (error) {
       console.error('Error al crear el ticket:', error);
       setError('Error al crear el ticket. Inténtalo nuevamente.');
     }
   };
-
+ 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <Navbar />

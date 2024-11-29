@@ -70,8 +70,8 @@ const CustomersComponent = () => {
   if (loading) return <p>Cargando grupos...</p>;
 
   return (
-    <section className="bg-white min-h-screen flex justify-center items-start md:pl-64 mt-16">
-      <div className="container mx-auto px-4 py-10 bg-white">
+    <section className="bg-white min-h-screen flex flex-col md:pl-64 mt-16">
+      <div className="container mx-auto px-4 py-10 bg-white flex-grow">
         <h2 className="text-lg font-medium text-gray-800 mb-4">Tus Grupos</h2>
 
         {error && <p className="text-red-500 mb-4">Error al cargar los grupos. Inténtalo de nuevo más tarde.</p>}
@@ -83,13 +83,12 @@ const CustomersComponent = () => {
         )}
 
         {customers.length > 0 && (
-          <div className="overflow-hidden border border-gray-200 rounded-lg">
+          <div className="relative overflow-hidden border border-gray-200 rounded-lg mb-12">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="py-2 px-2 text-xs sm:text-sm font-normal text-left text-black">Nombre</th>
                   <th className="px-2 sm:px-2 py-2 text-xs sm:text-sm font-normal text-left text-black">Descripción</th>
-                  <th className="px-2 sm:px-2 py-2 text-xs sm:text-sm font-normal text-left text-black">Usuarios</th>
                   <th className="px-2 sm:px-2 py-2 text-xs sm:text-sm font-normal text-left text-black">Acciones</th>
                 </tr>
               </thead>
@@ -104,10 +103,6 @@ const CustomersComponent = () => {
                     </td>
                     <td className="px-2 py-2 text-xs sm:text-sm whitespace-nowrap">
                       {customer.proyecto?.descripcion || customer.description || "Sin descripción"}
-                    </td>
-                    <td className="px-2 py-2 text-xs sm:text-sm whitespace-nowrap">
-                      {customer.proyecto?.usuarios?.length || customer.users || 0}{" "}
-                      usuarios
                     </td>
                     <td className="px-2 py-2 text-xs sm:text-sm whitespace-nowrap">
                       {customer.rol === "Creador" && (
@@ -129,12 +124,13 @@ const CustomersComponent = () => {
           </div>
         )}
 
-        <div className="flex justify-end mt-4">
+        {/* Botón "Crear Nuevo Grupo" al final de la tabla */}
+        <div className="mt-6 flex justify-end">
           <button
             onClick={handleAddGroup}
-            className="px-6 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600"
+            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow"
           >
-            Crear Grupo
+            Crear Nuevo Grupo
           </button>
         </div>
       </div>

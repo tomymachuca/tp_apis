@@ -33,7 +33,7 @@ export const Historial = () => {
         const processedTickets = ticketsResponse.map((ticket) => ({
           ...ticket,
           imagen_url: ticket.imagen
-            ? `${process.env.REACT_APP_API_URL || "http://localhost:3000"}${ticket.imagen}`
+            ? `${process.env.REACT_APP_API_URL || "http://localhost:3001"}${ticket.imagen}`
             : null,
         }));
 
@@ -70,7 +70,7 @@ export const Historial = () => {
   };
 
   const handleAddTicket = () => {
-    navigate(`/ticket-grupo`);
+    navigate(`/ticket-grupo/${id_grupo}`);
   };
 
   return (

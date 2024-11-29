@@ -50,7 +50,7 @@ function App() {
         <Route path="/balance/:groupId" element={<Balance />} />
         <Route path="/cerrar-balance" element={<SettleBalanceComponent />} />
         <Route path="/saldo" element={<Saldos />} />
-        <Route path="/ticket-grupo" element={<TicketGroupForm />} />
+        <Route path="/ticket-grupo/:id_grupo" element={<TicketGroupForm />} />
       </Routes>
     </Router>
   );
