@@ -26,9 +26,20 @@ export const Historial = () => {
       try {
         setLoading(true);
 
+        // Obtener tickets por ID de grupo
         const ticketsResponse = await getTicketsByProjectId(id_grupo);
-        setTickets(ticketsResponse || []);
 
+        // Procesar las URLs de las imágenes
+        const processedTickets = ticketsResponse.map((ticket) => ({
+          ...ticket,
+          imagen_url: ticket.imagen
+            ? `${process.env.REACT_APP_API_URL || "http://localhost:3000"}${ticket.imagen}`
+            : null,
+        }));
+
+        setTickets(processedTickets);
+
+        // Obtener usuarios por ID de grupo
         const usersResponse = await getMembersByGroupId(id_grupo);
         if (usersResponse.members) {
           const map = {};
@@ -38,8 +49,12 @@ export const Historial = () => {
           setUsersMap(map);
         }
       } catch (error) {
-        console.error("Error al cargar los datos:", error);
-        setError("Hubo un problema al cargar los datos.");
+        if (error.response && error.response.status === 404) {
+          setError("No se encontraron tickets para este grupo.");
+        } else {
+          console.error("Error al cargar los datos:", error);
+          setError("Hubo un problema al cargar los datos. Por favor, inténtalo de nuevo.");
+        }
       } finally {
         setLoading(false);
       }
@@ -55,7 +70,7 @@ export const Historial = () => {
   };
 
   const handleAddTicket = () => {
-    navigate(`/cargar-ticket/${id_grupo}`);
+    navigate(`/ticket-grupo`);
   };
 
   return (
@@ -98,10 +113,21 @@ export const Historial = () => {
           </div>
         </div>
 
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={handleAddTicket}
+            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow"
+          >
+            Agregar Ticket
+          </button>
+        </div>
+
         {loading ? (
           <p className="text-gray-600">Cargando tickets...</p>
         ) : error ? (
           <p className="text-red-600">{error}</p>
+        ) : tickets.length === 0 ? (
+          <p className="text-gray-600">No hay tickets disponibles para este grupo.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white shadow-md rounded-lg">

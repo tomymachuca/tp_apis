@@ -2,7 +2,6 @@ import apiClient from './axios'; // Importa el cliente Axios
 
 // Servicio para registrar usuarios
 export const registerUser = async (userData) => {
-  // No configuramos explícitamente el Content-Type aquí; axios lo hará automáticamente
   const response = await apiClient.post('/users/register', userData, {
     headers: {
       'Content-Type': 'multipart/form-data',
@@ -15,12 +14,11 @@ export const registerUser = async (userData) => {
 export const loginUser = async (credentials) => {
   try {
     const response = await apiClient.post('/users/login', credentials);
-    return response.data; // Asegúrate de que `response.data` contenga el token y el usuario.
+    return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.error || 'Error en la solicitud');
   }
 };
-
 
 // Servicio para obtener todos los usuarios
 export const getUsers = async () => {
@@ -34,9 +32,22 @@ export const getUserByEmail = async (email) => {
   return response.data;
 };
 
-
-
-export const getUserProfile = async () => {
-  const response = await apiClient.get('/users/profile'); // Endpoint del backend para obtener el perfil
+// Servicio para obtener el perfil de usuario por ID
+export const getUserProfileById = async (id_usuario) => {
+  const response = await apiClient.get(`/users/usuarios/${id_usuario}`); // Usamos el id_usuario en la URL
   return response.data;
+};
+
+// Servicio para actualizar la foto de perfil del usuario
+export const updateProfilePicture = async (id_usuario, formData) => {
+  try {
+    const response = await apiClient.put(`users/profile-picture/${id_usuario}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data', // Especifica que estamos enviando un archivo
+      },
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.error || 'Error al actualizar la foto de perfil');
+  }
 };

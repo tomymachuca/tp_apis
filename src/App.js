@@ -42,12 +42,12 @@ function App() {
         <Route path="/miembros/:id_grupo" element={<TeamMembersComponent />} />
 
         {/* Ruta para el perfil de usuario */}
-        <Route path="/tu-perfil" element={<UserProfileComponent />} />
+        <Route path="/tu-perfil/:id_usuario" element={<UserProfileComponent />} />
 
         {/* Ruta para agregar miembros */}
         <Route path="/add-members" element={<AddMembers />} />
         <Route path="/historial/:id_grupo" element={<Historial />} />
-        <Route path="/balance" element={<Balance />} />
+        <Route path="/balance/:groupId" element={<Balance />} />
         <Route path="/cerrar-balance" element={<SettleBalanceComponent />} />
         <Route path="/saldo" element={<Saldos />} />
         <Route path="/ticket-grupo" element={<TicketGroupForm />} />

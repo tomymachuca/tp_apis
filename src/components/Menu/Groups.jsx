@@ -47,7 +47,7 @@ const CustomersComponent = () => {
   }, [customers]);
 
   const handleAddGroup = () => {
-    navigate("/create-group");
+    navigate("/crear-grupo");
   };
 
   const handleViewMembers = (groupId) => {

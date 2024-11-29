@@ -1,102 +1,123 @@
 import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom"; // Importar useParams
+import Navbar from "./Menu/Navbar"; // Navbar
+import { getBalancesByGroupId, closeBalanceByGroupId } from "../api/balances"; // API
 
-// Miembros de ejemplo y pagos simulados
-const members = [
-  { nombre: "Tomas machuca", email: "tomasmachuca@gmail.com" },
-  { nombre: "Marco riccitelli", email: "marcoriccitelli@gmail.com" },
-  { nombre: "Franco Magurno", email: "francomagurno@gmail.com" },
-];
-
-const payments = [
-  { paidBy: "tomasmachuca@gmail.com", amount: 999 },
-  { paidBy: "marcoriccitelli@gmail.com", amount: 400 },
-  { paidBy: "francomagurno@gmail.com", amount: 80 },
-];
-
-export const Balance = () => {
-  const [balances, setBalances] = useState([]);
-
-  // Función para calcular los balances
-  const calculateBalances = () => {
-    const totalAmount = payments.reduce((acc, payment) => acc + payment.amount, 0);
-    const share = totalAmount / members.length; // Cuánto debería pagar cada uno
-    const tempBalances = members.map((member) => {
-      const paidByMember =
-        payments.find((payment) => payment.paidBy === member.email)?.amount || 0;
-      const balance = paidByMember - share; // Positivo significa que debe cobrar, negativo que debe pagar
-
-      const porPagar = balance < 0 ? Math.abs(balance).toFixed(2) : 0;
-      const porCobrar = balance > 0 ? balance.toFixed(2) : 0;
-
-      let estado = "A Favor";
-      let estadoClass = "bg-green-200 text-green-700"; // Estilos para A Favor
-      if (porPagar > porCobrar) {
-        estado = "Deuda";
-        estadoClass = "bg-red-200 text-red-700"; // Estilos para Deuda
-      }
-
-      return {
-        nombre: member.nombre,
-        email: member.email,
-        porPagar: `$${porPagar}`,
-        porCobrar: `$${porCobrar}`,
-        estado,
-        estadoClass, // Clase CSS para el estilo condicional
-      };
-    });
-    setBalances(tempBalances);
-  };
+const Balance = () => {
+  const { groupId } = useParams(); // Obtener el ID del grupo desde la URL
+  const [balances, setBalances] = useState([]); // Inicializar como un arreglo vacío
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    calculateBalances();
-  }, []);
+    if (!groupId) {
+      setError("El ID del grupo no está definido.");
+      return;
+    }
+
+    const fetchBalances = async () => {
+      setIsLoading(true);
+      try {
+        // Obtener balances desde la API
+        const fetchedBalances = await getBalancesByGroupId(groupId);
+
+        // Validar que sea un arreglo antes de actualizar el estado
+        if (Array.isArray(fetchedBalances)) {
+          setBalances(fetchedBalances);
+        } else {
+          setBalances([]);
+          console.error("La respuesta no es un arreglo:", fetchedBalances);
+        }
+      } catch (err) {
+        console.error("Error fetching balances:", err);
+        setError("Error al obtener balances. Intenta nuevamente más tarde.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBalances();
+  }, [groupId]);
+
+  const handleCloseBalance = async () => {
+    if (!groupId) {
+      setError("El ID del grupo no está definido.");
+      return;
+    }
+
+    try {
+      await closeBalanceByGroupId(groupId);
+      alert("El balance ha sido cerrado correctamente.");
+      // Refrescar balances después de cerrarlos
+      const updatedBalances = await getBalancesByGroupId(groupId);
+      setBalances(updatedBalances);
+    } catch (err) {
+      console.error("Error closing balance:", err);
+      setError("Error al cerrar el balance. Intenta nuevamente más tarde.");
+    }
+  };
 
   return (
-    <div className="container mx-auto p-4">
-      {/* Título y descripción */}
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold text-gray-900">Balance de Transacciones</h1>
-        <p className="text-gray-600">
-          Este es un resumen del balance financiero, mostrando las cantidades
-          por pagar o por cobrar de los miembros.
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+      <Navbar />
+      <div className="container mx-auto p-4 mt-16">
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-gray-900">Balance de Transacciones</h1>
+          <p className="text-gray-600">
+            Este es un resumen del balance financiero, mostrando los montos por pagar o por cobrar.
+          </p>
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+        </div>
 
-      {/* Tabla */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
-          <thead>
-            <tr>
-              <th className="p-4 text-left text-gray-700 font-semibold">Nombre</th>
-              <th className="p-4 text-left text-gray-700 font-semibold">Email</th>
-              <th className="p-4 text-left text-gray-700 font-semibold">Por Pagar</th>
-              <th className="p-4 text-left text-gray-700 font-semibold">Por Cobrar</th>
-              <th className="p-4 text-left text-gray-700 font-semibold">Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {balances.map((balance, index) => (
-              <tr key={index} className="border-t">
-                <td className="p-4 text-gray-900">
-                  {balance.nombre}
-                  {balance.nombre === "Tomas machuca" && (
-                    <span className="ml-2 bg-blue-100 text-blue-600 text-xs font-semibold px-2 py-1 rounded-lg">
-                      Tú
-                    </span>
-                  )}
-                </td>
-                <td className="p-4 text-gray-600">{balance.email}</td>
-                <td className="p-4 text-gray-600">{balance.porPagar}</td>
-                <td className="p-4 text-gray-600">{balance.porCobrar}</td>
-                <td className="p-4">
-                  <span className={`px-3 py-1 rounded-full text-sm ${balance.estadoClass}`}>
-                    {balance.estado}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="mb-4">
+          <button
+            onClick={handleCloseBalance}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          >
+            Cerrar Balance
+          </button>
+        </div>
+
+        {isLoading ? (
+          <p className="text-gray-500">Cargando balances...</p>
+        ) : balances.length === 0 ? (
+          <p className="text-gray-500">No se encontraron balances para este grupo.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+              <thead>
+                <tr>
+                  <th className="p-4 text-left text-gray-700 font-semibold">Usuario</th>
+                  <th className="p-4 text-left text-gray-700 font-semibold">Correo</th>
+                  <th className="p-4 text-left text-gray-700 font-semibold">Por Pagar</th>
+                  <th className="p-4 text-left text-gray-700 font-semibold">Por Cobrar</th>
+                </tr>
+              </thead>
+              <tbody>
+                {balances.map((balance, index) => (
+                  <tr key={index} className="border-t">
+                    <td className="p-4 text-gray-900">{balance.userFrom.name}</td>
+                    <td className="p-4 text-gray-600">{balance.userFrom.email}</td>
+                    <td
+                      className={`p-4 text-gray-600 ${
+                        parseFloat(balance.amount) < 0 ? "text-red-500" : "text-gray-600"
+                      }`}
+                    >
+                      ${parseFloat(balance.amount) < 0 ? Math.abs(balance.amount) : 0}
+                    </td>
+                    <td
+                      className={`p-4 text-gray-600 ${
+                        parseFloat(balance.amount) > 0 ? "text-green-500" : "text-gray-600"
+                      }`}
+                    >
+                      ${parseFloat(balance.amount) > 0 ? balance.amount : 0}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

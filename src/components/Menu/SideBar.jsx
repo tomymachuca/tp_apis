@@ -1,8 +1,21 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+
+  // Función para obtener el id_usuario del localStorage o contexto (aquí usaremos localStorage como ejemplo)
+  const getUserId = () => {
+    const user = localStorage.getItem('user'); // Suponiendo que 'user' tiene el id_usuario
+    if (user) {
+      return JSON.parse(user).id_usuario; // Si usas un objeto, puedes extraer el id_usuario
+    }
+    return null; // Si no está logueado
+  };
+
+  // Obtener el id_usuario
+  const userId = getUserId();
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
@@ -31,9 +44,7 @@ const Sidebar = () => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-40 flex flex-col w-64 h-screen px-4 py-8 overflow-y-auto bg-gray-50 border-r transform ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        } transition-transform duration-300 ease-in-out md:translate-x-0`}
+        className={`fixed top-0 left-0 z-40 flex flex-col w-64 h-screen px-4 py-8 overflow-y-auto bg-gray-50 border-r transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out md:translate-x-0`}
       >
         {/* Navegación */}
         <nav className="flex-1 mt-6">
@@ -56,7 +67,7 @@ const Sidebar = () => {
 
           {/* Link a Cuenta (Ruta: /user-profile) */}
           <Link
-            to="/tu-perfil"
+            to={`/tu-perfil/${userId}`} // Usamos el userId dinámico aquí
             className="flex items-center px-4 py-2 mt-5 text-black rounded-md hover:bg-gray-200 hover:text-black transition-colors duration-300"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

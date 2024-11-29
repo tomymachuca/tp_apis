@@ -11,12 +11,12 @@ const TicketForm = () => {
     grupo: '',
     descripcion: '',
     foto: null,
-    divisionType: 'equitativo', // Default division type
+    divisionType: 'equitativo', // Valor inicial
+    porcentajes: [],
   });
 
   const [grupos, setGrupos] = useState([]);
-  const [miembros, setMiembros] = useState([]); // Miembros del grupo seleccionado
-  const [porcentajes, setPorcentajes] = useState([]);
+  const [miembros, setMiembros] = useState([]);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -59,19 +59,22 @@ const TicketForm = () => {
       const response = await getMembersByGroupId(selectedGroupId);
       if (response.members && Array.isArray(response.members)) {
         setMiembros(response.members);
-        setPorcentajes(
-          response.members.map((member) => ({
-            member_id: member.id,
+        setFormData((prevData) => ({
+          ...prevData,
+          porcentajes: response.members.map((member) => ({
+            id_usuario: member.id,
             porcentaje: '',
-          }))
-        );
+          })),
+        }));
       } else {
         setMiembros([]);
+        setFormData((prevData) => ({ ...prevData, porcentajes: [] }));
       }
     } catch (error) {
       console.error('Error al cargar miembros del grupo:', error);
       setError('No se pudo cargar los miembros del grupo. Intenta nuevamente.');
       setMiembros([]);
+      setFormData((prevData) => ({ ...prevData, porcentajes: [] }));
     }
   };
 
@@ -80,15 +83,15 @@ const TicketForm = () => {
       ...prevData,
       divisionType: type,
     }));
-    if (type === 'porcentajes' && formData.grupo) {
-      handleGroupChange({ target: { value: formData.grupo } }); // Cargar miembros si seleccionas "Porcentajes"
-    }
   };
 
   const handlePorcentajeChange = (index, value) => {
-    const updatedPorcentajes = [...porcentajes];
+    const updatedPorcentajes = [...formData.porcentajes];
     updatedPorcentajes[index].porcentaje = value;
-    setPorcentajes(updatedPorcentajes);
+    setFormData((prevData) => ({
+      ...prevData,
+      porcentajes: updatedPorcentajes,
+    }));
   };
 
   const handleFileChange = (e) => {
@@ -108,7 +111,7 @@ const TicketForm = () => {
     }
 
     if (formData.divisionType === 'porcentajes') {
-      const totalPorcentaje = porcentajes.reduce((sum, item) => sum + parseFloat(item.porcentaje || 0), 0);
+      const totalPorcentaje = formData.porcentajes.reduce((sum, item) => sum + parseFloat(item.porcentaje || 0), 0);
       if (totalPorcentaje !== 100) {
         setError('El porcentaje total debe ser exactamente 100%.');
         return;
@@ -121,9 +124,10 @@ const TicketForm = () => {
         id_usuario: userId,
         fecha_compra: formData.fecha,
         monto_total: formData.monto,
+        descripcion: formData.descripcion,
         imagen: formData.foto,
         division_type: formData.divisionType,
-        members: formData.divisionType === 'porcentajes' ? porcentajes : [],
+        porcentajes: formData.divisionType === 'porcentajes' ? formData.porcentajes : [],
       };
 
       await createTicket(ticketData);
@@ -146,45 +150,40 @@ const TicketForm = () => {
         <div className="bg-white shadow-lg rounded-lg p-8 max-w-lg w-full mx-4">
           <h2 className="text-2xl font-bold text-center text-gray-700 mb-6">Ingrese su Ticket</h2>
           {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+          {successMessage && <p className="text-green-500 text-sm mb-4">{successMessage}</p>}
           <form onSubmit={handleSubmit}>
-            {/* Fecha */}
             <div className="mb-4">
               <label htmlFor="fecha" className="block text-sm font-medium text-gray-700 mb-2">Fecha:</label>
               <input
                 type="date"
                 id="fecha"
-                name="fecha"
                 value={formData.fecha}
                 onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
                 required
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
               />
             </div>
 
-            {/* Monto Total */}
             <div className="mb-4">
               <label htmlFor="monto" className="block text-sm font-medium text-gray-700 mb-2">Monto Total:</label>
               <input
                 type="number"
                 id="monto"
-                name="monto"
                 value={formData.monto}
                 onChange={(e) => setFormData({ ...formData, monto: e.target.value })}
                 required
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
               />
             </div>
 
-            {/* Grupo */}
             <div className="mb-4">
               <label htmlFor="grupo" className="block text-sm font-medium text-gray-700 mb-2">Nombre del grupo:</label>
               <select
                 id="grupo"
-                name="grupo"
                 value={formData.grupo}
                 onChange={handleGroupChange}
                 required
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
               >
                 <option value="" disabled>Seleccione un grupo</option>
                 {grupos.map((group) => (
@@ -195,7 +194,29 @@ const TicketForm = () => {
               </select>
             </div>
 
-            {/* Botones para seleccionar tipo de división */}
+            <div className="mb-4">
+              <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 mb-2">Descripción:</label>
+              <textarea
+                id="descripcion"
+                value={formData.descripcion}
+                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                required
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                rows="4"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="foto" className="block text-sm font-medium text-gray-700 mb-2">Foto:</label>
+              <input
+                type="file"
+                id="foto"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="block w-full text-sm text-gray-700"
+              />
+            </div>
+
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de división:</label>
               <div className="flex gap-4">
@@ -216,49 +237,35 @@ const TicketForm = () => {
               </div>
             </div>
 
-            {/* Porcentajes */}
             {formData.divisionType === 'porcentajes' && (
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Asignar porcentajes:</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Distribución porcentual:</label>
                 {miembros.map((miembro, index) => (
-                  <div key={miembro.id} className="flex items-center space-x-4 mb-2">
-                    <span className="text-gray-700">{miembro.nombre}</span>
+                  <div key={miembro.id} className="flex items-center mb-2">
+                    <span className="mr-4">{miembro.nombre}</span>
                     <input
                       type="number"
-                      value={porcentajes[index]?.porcentaje || ''}
+                      value={formData.porcentajes[index]?.porcentaje || ''}
                       onChange={(e) => handlePorcentajeChange(index, e.target.value)}
-                      className="block w-16 px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      placeholder="%"
+                      className="w-24 px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                      required
                     />
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Subir Foto del Ticket */}
-            <div className="mb-6">
-              <label htmlFor="foto" className="block text-sm font-medium text-gray-700 mb-2">Subir foto del ticket:</label>
-              <input
-                type="file"
-                id="foto"
-                name="foto"
-                accept="image/*"
-                onChange={handleFileChange}
-                required
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
-              />
-            </div>
-
-            {successMessage && <p className="text-green-500 text-sm mb-4">{successMessage}</p>}
-
-            {/* Submit Button */}
             <button
               type="submit"
-              className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm"
             >
-              Enviar
+              Enviar Ticket
             </button>
           </form>
+
+          {successMessage && (
+            <p className="text-green-500 text-sm mt-4">{successMessage}</p>
+          )}
         </div>
       </main>
     </div>

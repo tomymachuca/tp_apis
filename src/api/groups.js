@@ -61,3 +61,23 @@ export const addMembersToGroup = async (id_grupo, members) => {
     throw error;
   }
 };
+
+export const deleteMember = async (id_grupo, id_usuario) => {
+  try {
+    const response = await apiClient.delete(`/projects/group/${id_grupo}/member/${id_usuario}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al eliminar el miembro:', error);
+    throw new Error(error.response?.data?.message || 'No se pudo eliminar el miembro');
+  }
+};
+
+export const getGroupPayments = async (groupId) => {
+  try {
+    const response = await apiClient.get(`/groups/${groupId}/payments`);
+    return response.data.payments; // Asegúrate de que este campo sea correcto
+  } catch (error) {
+    console.error("Error fetching group payments:", error);
+    throw error;
+  }
+};

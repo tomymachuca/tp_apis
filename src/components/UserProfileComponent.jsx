@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from './Menu/Navbar';
 import ResetPasswordModal from './ResetPasswordModal';
-import { getUserProfile } from '../api/users'; // Servicio para obtener el perfil del usuario
+import { getUserProfileById, updateProfilePicture } from '../api/users'; // Servicio para obtener y actualizar la foto de perfil
 
 const UserProfileComponent = () => {
+  const { id_usuario } = useParams(); // Obtén el id_usuario de la URL
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [profilePicture, setProfilePicture] = useState('');
@@ -16,30 +17,37 @@ const UserProfileComponent = () => {
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [photoFile, setPhotoFile] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Llamada al backend para obtener los datos del usuario
     const fetchUserProfile = async () => {
       try {
-        const response = await getUserProfile();
+        const response = await getUserProfileById(id_usuario);
         setUsername(response.nombre);
         setEmail(response.correo);
-        setProfilePicture(response.foto_perfil || ''); // Actualiza con la URL de la foto de perfil si existe
+
+        // Si la foto existe, concatenamos el dominio con la ruta de la foto
+        const imageUrl = response.foto_perfil
+          ? `http://localhost:3000${response.foto_perfil}`
+          : 'https://via.placeholder.com/150'; // Foto predeterminada en caso de que no haya
+
+        setProfilePicture(imageUrl); // Actualiza el estado de la foto de perfil
       } catch (error) {
         console.error('Error al obtener el perfil del usuario:', error);
-        navigate('/'); // Redirige al inicio si no se puede obtener el perfil
+        navigate('/');
       }
     };
 
     fetchUserProfile();
-  }, [navigate]);
+  }, [id_usuario, navigate]); // Usamos id_usuario como dependencia
 
   const handleProfilePictureChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       const imageUrl = URL.createObjectURL(file);
       setProfilePicture(imageUrl);
+      setPhotoFile(file); // Guardamos el archivo seleccionado
     }
   };
 
@@ -54,7 +62,7 @@ const UserProfileComponent = () => {
       setShowDeleteModal(false);
       setSuccessMessage('Tu cuenta ha sido eliminada correctamente.');
       setTimeout(() => {
-        navigate('/');
+        navigate('/'); // Redirige al inicio después de 3 segundos
       }, 3000);
     } else {
       setDeleteError('Por favor, ingrese un correo y una contraseña.');
@@ -74,6 +82,26 @@ const UserProfileComponent = () => {
 
   const handleCloseResetPasswordModal = () => {
     setIsResetPasswordModalOpen(false);
+  };
+  const handleUpdateProfilePicture = async () => {
+    if (photoFile) {
+      const formData = new FormData();
+      formData.append('foto_perfil', photoFile);
+  
+      try {
+        // Aquí estamos enviando el token en las cabeceras para la autenticación
+        const token = localStorage.getItem('authToken'); // Suponiendo que guardas el token en localStorage
+        const response = await updateProfilePicture(id_usuario, formData, token);  // Asegúrate de pasar el token
+  
+        setSuccessMessage('Foto de perfil actualizada exitosamente.');
+        setProfilePicture(`http://localhost:3000${response.foto_perfil}`);
+      } catch (error) {
+        console.error('Error al actualizar la foto de perfil:', error);
+        setSuccessMessage('Error al actualizar la foto de perfil.');
+      }
+    } else {
+      setSuccessMessage('Por favor, selecciona una foto.');
+    }
   };
 
   const handleGoToMenu = () => {
@@ -189,6 +217,12 @@ const UserProfileComponent = () => {
           {/* Botones de acción */}
           <div className="mt-6 flex flex-col gap-4">
             <button
+              onClick={handleUpdateProfilePicture}
+              className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+            >
+              Actualizar Foto de Perfil
+            </button>
+            <button
               onClick={handleOpenResetPasswordModal}
               className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
             >
@@ -200,55 +234,46 @@ const UserProfileComponent = () => {
             >
               Eliminar Cuenta
             </button>
-            <button
-              onClick={handleGoToMenu}
-              className="w-full py-2 px-4 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
-            >
-              Volver al Menú
-            </button>
           </div>
         </div>
       </main>
 
-      {/* Modal de restablecer contraseña */}
+      {/* Modal de restablecimiento de contraseña */}
       {isResetPasswordModalOpen && <ResetPasswordModal onClose={handleCloseResetPasswordModal} />}
 
-      {/* Modal de confirmación de eliminación */}
+      {/* Modal de eliminación de cuenta */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Confirmar Eliminación</h2>
-            {deleteError && <p className="text-red-500 text-sm mb-2">{deleteError}</p>}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Correo Electrónico</label>
-              <input
-                type="email"
-                value={deleteEmail}
-                onChange={(e) => setDeleteEmail(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Contraseña</label>
-              <input
-                type="password"
-                value={deletePassword}
-                onChange={(e) => setDeletePassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              />
-            </div>
-            <div className="flex justify-between">
-              <button
-                onClick={handleConfirmDelete}
-                className="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-md hover:bg-red-500 focus:outline-none"
-              >
-                Confirmar
-              </button>
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg w-96">
+            <h2 className="text-xl font-semibold text-center">Eliminar Cuenta</h2>
+            <p className="text-sm text-center text-gray-700 mb-4">Para eliminar tu cuenta, ingresa tu correo y contraseña.</p>
+            <input
+              type="email"
+              value={deleteEmail}
+              onChange={(e) => setDeleteEmail(e.target.value)}
+              placeholder="Correo Electrónico"
+              className="w-full px-3 py-2 mb-3 border border-gray-300 rounded-md"
+            />
+            <input
+              type="password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              placeholder="Contraseña"
+              className="w-full px-3 py-2 mb-3 border border-gray-300 rounded-md"
+            />
+            {deleteError && <p className="text-red-500 text-xs">{deleteError}</p>}
+            <div className="flex justify-between mt-4">
               <button
                 onClick={handleCloseDeleteModal}
-                className="px-4 py-2 bg-gray-600 text-white text-sm font-semibold rounded-md hover:bg-gray-500 focus:outline-none"
+                className="py-2 px-4 bg-gray-500 hover:bg-gray-400 text-white font-semibold rounded-md"
               >
                 Cancelar
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="py-2 px-4 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-md"
+              >
+                Eliminar
               </button>
             </div>
           </div>
